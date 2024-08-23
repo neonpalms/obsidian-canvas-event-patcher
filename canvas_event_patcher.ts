@@ -5,20 +5,22 @@ import { around } from "monkey-around";
 
 export default class CanvasEventPatcher {
     private static plugin: Plugin;
-
-    constructor(plugin: Plugin) {
+    
+    static init(plugin: Plugin) {
         CanvasEventPatcher.plugin = plugin;
-        if (!this.applyCanvasPatch())
-            throw new Error("Canvas could not be monkey patched.");
+        plugin.registerEvent(
+            plugin.app.workspace.on('file-open', this.tryApplyCanvasPatch)
+        );
+        this.tryApplyCanvasPatch();
     }
 
-    private applyCanvasPatch(): boolean {
-        const canvasView = CanvasEventPatcher.plugin.app.workspace.getActiveViewOfType(ItemView);
+    private static tryApplyCanvasPatch() {
+        const workspace = CanvasEventPatcher.plugin.app.workspace;
+
+        const canvasView = workspace.getActiveViewOfType(ItemView);
         // @ts-ignore
         const canvas: CanvasData = canvasView?.canvas;
-        if (!canvas) return false;
-
-        const workspace = CanvasEventPatcher.plugin.app.workspace;
+        if (!canvas) return;
 
         CanvasEventPatcher.plugin.register(around(canvas.constructor.prototype, {
             markViewportChanged: (next: any) => function (...args: any) {
@@ -116,7 +118,5 @@ export default class CanvasEventPatcher {
                 return result;
             },
         }));
-
-        return true;
     }
 }
