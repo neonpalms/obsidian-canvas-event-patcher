@@ -127,8 +127,8 @@ export default class CanvasEventPatcher {
 
         CanvasEventPatcher.plugin.register(around(canvas.nodeInteractionLayer.constructor.prototype, {
             setTarget: (next: any) => function (node: CanvasNodeData) {
-                console.info(`Node ${node.id} interacted with.`);
                 const result = next.call(this, node);
+                node ? console.info(`Node ${node.id} interacted with.`) : {};
                 workspace.trigger(CanvasEvent.NodeInteraction, this.canvas, node);
                 return result;
             },
