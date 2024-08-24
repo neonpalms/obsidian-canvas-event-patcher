@@ -28,50 +28,50 @@ export default class CanvasEventPatcher {
 
         CanvasEventPatcher.plugin.register(around(canvas.constructor.prototype, {
             markViewportChanged: (next: any) => function (...args: any) {
-                workspace.trigger(CanvasEvent.ViewportChanged.Before, this);
+                workspace.trigger(CanvasEvent.ViewportChanged.Before, ...args);
                 const result = next.call(this, ...args);
-                workspace.trigger(CanvasEvent.ViewportChanged.After, this);
+                workspace.trigger(CanvasEvent.ViewportChanged.After, ...args);
                 console.info(`Viewport has changed.`);
                 return result;
             },
             markMoved: (next: any) => function (node: CanvasNodeData) {
                 const result = next.call(this, node);
-                workspace.trigger(CanvasEvent.NodeMoved, this, node);
+                workspace.trigger(CanvasEvent.NodeMoved, node);
                 console.info(`Node ${node.id} moved to ${node.x}, ${node.y}`);
                 return result;
             },
             updateSelection: (next: any) => function (update: () => void) {
                 const oldSelection = new Set(this.selection);
                 const result = next.call(this, update);
-                workspace.trigger(CanvasEvent.SelectionChanged, this, oldSelection, ((update: () => void) => next.call(this, update)));
+                workspace.trigger(CanvasEvent.SelectionChanged, oldSelection, ((update: () => void) => next.call(this, update)));
                 console.info(`The selection has been updated.`);
                 return result
             },
             addNode: (next: any) => function (node: CanvasNodeData) {
-                workspace.trigger(CanvasEvent.NodeCreated, this, node);
+                workspace.trigger(CanvasEvent.NodeCreated, node);
                 console.info(`Node ${node.id} was created.`);
                 return next.call(this, node);
             },
             createTextNode: (next: any) => function (node: CanvasTextData) {
-                workspace.trigger(CanvasEvent.NodeTypeCreated.Text);
+                workspace.trigger(CanvasEvent.NodeTypeCreated.Text, node);
                 const result = next.call(this, node);
                 console.info(`Text node ${node.id} was created.`);
                 return result;
             },
             createFileNode: (next: any) => function (node: CanvasFileData) {
-                workspace.trigger(CanvasEvent.NodeTypeCreated.File);
+                workspace.trigger(CanvasEvent.NodeTypeCreated.File, node);
                 const result = next.call(this, node);
                 console.info(`File node ${node.id} was created.`);
                 return result;
             },
             createLinkNode: (next: any) => function (node: CanvasLinkData) {
-                workspace.trigger(CanvasEvent.NodeTypeCreated.Link);
+                workspace.trigger(CanvasEvent.NodeTypeCreated.Link, node);
                 const result = next.call(this, node);
                 console.info(`Link node ${node.id} was created.`);
                 return result;
             },
             createGroupNode: (next: any) => function (group: CanvasGroupData) {
-                workspace.trigger(CanvasEvent.NodeTypeCreated.Group);
+                workspace.trigger(CanvasEvent.NodeTypeCreated.Group, group);
                 workspace.trigger(CanvasEvent.GroupCreated);
                 const result = next.call(this, group);
                 console.info(`Group node ${group.id} was created.`);
@@ -80,46 +80,46 @@ export default class CanvasEventPatcher {
             removeNode: (next: any) => function (node: AllCanvasNodeData) {
                 if (node.zIndex < -999) {
                     console.info(`Group ${node.id} removed.`);
-                    workspace.trigger(CanvasEvent.GroupRemoved);
+                    workspace.trigger(CanvasEvent.GroupRemoved, node);
                 }
                 else {
                     console.info(`Node ${node.id} removed.`);
-                    workspace.trigger(CanvasEvent.NodeRemoved);
+                    workspace.trigger(CanvasEvent.NodeRemoved, node);
                 }
                 const result = next.call(this, node);
                 return result;
             },
             addEdge: (next: any) => function (edge: CanvasEdgeData) {
-                workspace.trigger(CanvasEvent.EdgeCreated);
+                workspace.trigger(CanvasEvent.EdgeCreated, edge);
                 const result = next.call(this, edge);
                 console.info(`Edge ${edge.id} created between nodes ${edge.fromNode} to ${edge.toNode}.`);
                 return result;
             },
             removeEdge: (next: any) => function (edge: CanvasEdgeData) {
                 console.info(`Deleted edge ${edge.id} between nodes ${edge.fromNode} to ${edge.toNode}.`);
-                workspace.trigger(CanvasEvent.EdgeRemoved);
+                workspace.trigger(CanvasEvent.EdgeRemoved, edge);
                 const result = next.call(this, edge);
                 return result;
             },
             setReadonly: (next: any) => function (readonly: boolean) {
                 readonly ? console.info(`Readonly mode on.`) : console.info(`Readonly mode off.`);
                 const result = next.call(this, readonly);
-                workspace.trigger(CanvasEvent.ReadonlyChanged, this, readonly);
+                workspace.trigger(CanvasEvent.ReadonlyChanged, readonly);
                 return result;
             },
             zoomToBbox: (next: any) => function (bbox: any) {
                 console.info(`Getting ready to zoom to bounding box.`);
-                workspace.trigger(CanvasEvent.ZoomToBbox.Before, this, bbox);
+                workspace.trigger(CanvasEvent.ZoomToBbox.Before, bbox);
                 const result = next.call(this, bbox);
                 console.info(`Zoomed to bounding box.`);
-                workspace.trigger(CanvasEvent.ZoomToBbox.After, this, bbox);
+                workspace.trigger(CanvasEvent.ZoomToBbox.After, bbox);
                 return result;
             },
             requestSave: (next: any) => function (...args: any) {
                 console.info(`Canvas about to save.`);
-                workspace.trigger(CanvasEvent.CanvasSaved.Before, this);
+                workspace.trigger(CanvasEvent.CanvasSaved.Before, ...args);
                 const result = next.call(this, ...args);
-                workspace.trigger(CanvasEvent.CanvasSaved.After, this);
+                workspace.trigger(CanvasEvent.CanvasSaved.After, ...args);
                 console.info(`Canvas saved!`);
                 return result;
             },
@@ -129,7 +129,7 @@ export default class CanvasEventPatcher {
             setTarget: (next: any) => function (node: CanvasNodeData) {
                 const result = next.call(this, node);
                 node ? console.info(`Node ${node.id} interacted with.`) : {};
-                workspace.trigger(CanvasEvent.NodeInteraction, this.canvas, node);
+                workspace.trigger(CanvasEvent.NodeInteraction, node);
                 return result;
             },
         }));
@@ -138,7 +138,7 @@ export default class CanvasEventPatcher {
             render: (next: any) => function (...args: any) {
                 console.info(`Pop-up menu has been created.`);
                 const result = next.call(this, ...args);
-                workspace.trigger(CanvasEvent.PopupMenuCreated, this.canvas);
+                workspace.trigger(CanvasEvent.PopupMenuCreated, ...args);
                 next.call(this);
                 return result;
             },
