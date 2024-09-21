@@ -134,15 +134,17 @@ export default class CanvasEventPatcher {
             },
         }));
 
-        CanvasEventPatcher.plugin.register(around(canvas.menu.constructor.prototype, {
-            render: (next: any) => function (...args: any) {
-                console.info(`Pop-up menu has been created.`);
-                const result = next.call(this, ...args);
-                workspace.trigger(CanvasEvent.PopupMenuCreated, ...args);
-                next.call(this);
-                return result;
-            },
-        }));
+        // The menu is created & destroyed, but the patcher never releases it, which leads to memory full of patched objects
+        // So I commented this out for now
+        // CanvasEventPatcher.plugin.register(around(canvas.menu.constructor.prototype, {
+        //     render: (next: any) => function (...args: any) {
+        //         console.info(`Pop-up menu has been created.`);
+        //         const result = next.call(this, ...args);
+        //         workspace.trigger(CanvasEvent.PopupMenuCreated, ...args);
+        //         next.call(this);
+        //         return result;
+        //     },
+        // }));
 
         console.info("Canvas has been patched!");
     }
